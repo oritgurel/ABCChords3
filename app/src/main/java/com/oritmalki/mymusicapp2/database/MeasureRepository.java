@@ -1,0 +1,179 @@
+package com.oritmalki.mymusicapp2.database;
+
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MediatorLiveData;
+import android.arch.lifecycle.Observer;
+import android.support.annotation.Nullable;
+import android.util.Log;
+
+import com.oritmalki.mymusicapp2.AppExecutors;
+import com.oritmalki.mymusicapp2.model.Measure;
+
+import java.util.List;
+
+/**
+ * Created by Orit on 14.12.2017.
+ */
+
+public class MeasureRepository {
+
+    private static MeasureRepository sInstance;
+    private final AppDataBase mDatabase;
+    private MediatorLiveData<List<Measure>> mObservableMeasures;
+
+    //my addition
+    public AppExecutors appExecutors = new AppExecutors();
+
+//    private final MeasureDao measureDAO;
+//    private final BeatDao beatDao;
+
+
+    //private constructor
+    private MeasureRepository(final AppDataBase database) {
+
+        mDatabase = database;
+
+        mObservableMeasures = new MediatorLiveData<>();
+
+        mObservableMeasures.addSource(mDatabase.measureDao().getAll(), new Observer<List<Measure>>() {
+            @Override
+            public void onChanged(@Nullable List<Measure> measureEntities) {
+                if (mDatabase.getDatabaseCreated().getValue() != null) {
+                    appExecutors.diskIO().execute(() ->
+                    mObservableMeasures.postValue(measureEntities));
+                }
+            }
+        });
+    }
+
+    //new constructor from example
+    public static MeasureRepository getInstance(final AppDataBase database) {
+        if (sInstance == null) {
+            synchronized (MeasureRepository.class) {
+                if (sInstance == null) {
+                    sInstance = new MeasureRepository(database);
+                }
+            }
+        }
+        return sInstance;
+    }
+
+//Room Measures DAO
+
+    public void addNewMeasure(Measure measure) {
+        appExecutors.diskIO().execute(() ->
+
+                mDatabase.measureDao().newMeasure(measure));
+        Log.d("ADD_MEASURE", "Added empty measure to database");
+    }
+
+    public void addAllMeasures(List<Measure> measures) {
+        appExecutors.diskIO().execute(() ->
+                mDatabase.measureDao().insertAll(measures));
+    }
+
+    public LiveData<List<Measure>> getAllMeasures() {
+        return mObservableMeasures;
+    }
+
+    public LiveData<Measure> getMeasure(int measureNum) {
+
+             return mDatabase.measureDao().getMeasure(measureNum);
+          }
+
+
+    public void InsertMeasure(Measure measure) {
+
+                mDatabase.measureDao().newMeasure(measure);
+    }
+
+    public void deleteMeasure(Measure measure) {
+        appExecutors.diskIO().execute(() ->
+        mDatabase.measureDao().delete(measure));
+    }
+
+    public void updateMeasure(Measure measure) {
+        appExecutors.diskIO().execute(() ->
+                mDatabase.measureDao().updateMeasure(measure));
+    }
+
+//    public LiveData<List<Beat>> getBeats(int measureNum) {
+//        return mDatabase.measureDao().getBeats(measureNum);
+//    }
+
+    public void deleteAllMeasures(List<Measure> measures) {
+        appExecutors.diskIO().execute(() ->
+        mDatabase.measureDao().deleteAll(measures));
+    }
+
+    public void destroyDatabase() {
+
+    }
+    //my old constructor
+
+//    public MeasureRepository(Context context) {
+//        AppDataBase appDataBase = AppDataBase.getINSTANCE(context.getApplicationContext());
+//        measureDAO = appDataBase.getMeasureDao();
+//        beatDao = appDataBase.getBeatDao();
+//    }
+
+////Room Beat DAO
+//    public void addBeats(List<Beat> beats, Measure measure) {
+//
+//        try {
+//
+//            if (beats.size() == measure.getTimeSignature().getNumerator())
+////
+//                beatDao.insertAll(beats);
+//        }
+//        catch (Exception e) {
+//            Log.v("BeatsException", "Beats number do not match time signature");
+//        }
+//
+//    }
+//
+//    public void addBeat(Beat beat, Measure measure) {
+//
+//
+//            if (measure.getTimeSignature().getNumerator() > measure.getBeats().size())
+//            beatDao.insertBeat(beat);
+//
+//        else Log.v("BeatsException", "Beats number do not match time signature");
+//    }
+//
+//    public List<Beat> getBeatsFromMeasure(int measureNum) {
+//        return measureDAO.findByNumber(measureNum).getBeats();
+//
+//    }
+//
+//    public List<Beat> getBeats() {
+//        return measureDAO.getBeats();
+//    }
+
+
+//
+//    private HashMap<Integer, List<Beat>> measureHashMap;
+//
+
+//
+
+
+
+
+//    public void saveMeasure(Measure measure) {
+//        measureHashMap.put(measure.getNumber(), measure.getBeats());
+//    }
+//
+//    public List<Beat> getMeasureContent(int number) {
+//        return measureHashMap.get(number);
+//    }
+//
+//    public ArrayList<List<Beat>> getAllMeasuresContents() {
+//        return new ArrayList<>(measureHashMap.values());
+//    }
+//
+//
+//    AppDataBase db = Room.databaseBuilder(getApplicationContext(), AppDataBase.class, "app-database").build();
+
+    }
+
