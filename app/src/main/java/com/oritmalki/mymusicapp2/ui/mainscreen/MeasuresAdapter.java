@@ -35,6 +35,8 @@ public class MeasuresAdapter extends RecyclerView.Adapter<MeasuresAdapter.Measur
    Context context;
    RecyclerView mRecyclerView;
    Measure currentMeasure;
+   boolean isBeatSelected;
+   View selectedBeatView;
 
     @Override
     public void onAttachedToRecyclerView(RecyclerView recyclerView) {
@@ -43,21 +45,15 @@ public class MeasuresAdapter extends RecyclerView.Adapter<MeasuresAdapter.Measur
     }
 
     @Nullable
-    private final MeasureClickCallback mMeasureClickCallback;
+    private final BeatClickCallback mBeatClickCallback;
 
 //    @Nullable
 //    private final MeasureClickCallback measureClickCallback;
 
-    public MeasuresAdapter(Context context, @Nullable MeasureClickCallback measureclickCallback) {
+    public MeasuresAdapter(Context context, @Nullable BeatClickCallback beatClickCallback) {
         this.context = context;
-        this.mMeasureClickCallback = measureclickCallback;
+        this.mBeatClickCallback = beatClickCallback;
     }
-
-
-    //New Constructor
-//   public MeasuresAdapter(@Nullable MeasureClickCallback measureClickCallback) {
-//       this.measureClickCallback = measureClickCallback;
-//   }
 
 
 //new Architecture components accomodation
@@ -112,23 +108,6 @@ public class MeasuresAdapter extends RecyclerView.Adapter<MeasuresAdapter.Measur
     public void onBindViewHolder(MeasureHolder holder, int position) {
         MeasureHolder measureHolder = (MeasureHolder) holder;
         measures.get(position);
-
-        holder.measure.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                try {
-                    //passes position to editFragment
-                    mMeasureClickCallback.onClick(measures.get(position));
-
-//                    mItemClickListener.onItemClickListener(measures.get(position));
-                } catch (ClassCastException e) {
-                    e.printStackTrace();
-                }
-
-
-            }
-        });
 
 
         holder.measure.removeAllViews();
@@ -189,9 +168,34 @@ public class MeasuresAdapter extends RecyclerView.Adapter<MeasuresAdapter.Measur
                     TextView newBeat = new TextView(context);
                     newBeat.setLayoutParams(lp);
                     newBeat.setSingleLine(true);
+                    //save beat position in measure into new created beat
+                    newBeat.setTag(beats.indexOf(beat));
 
 
                     newBeat.setText(beat.getChordName());
+                    newBeat.setOnClickListener(new OnClickListener() {
+
+                        //on beat touched by user
+                        @Override
+                        public void onClick(View v) {
+                            //retrieve measure and beat position
+                            mBeatClickCallback.onClick(measures.get(position), v, (int) newBeat.getTag());
+                            v.setSelected(true);
+                            //initialize
+                            if (selectedBeatView != null) {
+                                selectedBeatView.setSelected(false);
+                                selectedBeatView.setBackgroundResource(R.color.paper);
+                            }
+                            //set color for selected
+                            selectedBeatView = v;
+                            if (selectedBeatView.isSelected()) {
+                                selectedBeatView.setBackgroundResource(R.color.preference_fallback_accent_color);
+                            } else {
+                                v.setBackgroundResource(R.color.paper);
+                            }
+                        }
+                    });
+
                     measureHolder.measure.addView(newBeat);
 
 

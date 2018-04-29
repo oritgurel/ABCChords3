@@ -48,7 +48,9 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     List<Beat> beatsForInsersion;
     SharedPreferences preferences;
     Editor editor;
-    Measure currentPosition;
+    Measure currentMeasure;
+    int currentBeatPosition;
+    private View currentBeatView;
 
     public final static String IS_C_ROOT_PRESSED = "IS_C_ROOT_PRESSED";
     public final static String IS_D_ROOT_PRESSED = "IS_D_ROOT_PRESSED";
@@ -82,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
             @Override
             public void onChanged(@Nullable List<Measure> measures) {
                 if (measures != null) {
-                    measuresAdapter = new MeasuresAdapter(getApplicationContext(), measureClickCallback);
+                    measuresAdapter = new MeasuresAdapter(getApplicationContext(), beatClickCallback);
                     measuresAdapter.setMeasuresList(measures, getApplicationContext());
                     recyclerView.setAdapter(measuresAdapter);
                     recyclerView.smoothScrollToPosition(measures.size());
@@ -93,9 +95,9 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
         });
     }
 
-    public void show(Measure measure) {
+    public void show(Measure measure, int currentBeatPosition) {
 
-        EditFragment editFragment = EditFragment.newInstance(measure);
+        EditFragment editFragment = EditFragment.newInstance(measure, currentBeatPosition);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
 //        if (!(getSupportFragmentManager().getBackStackEntryCount() == 1)) {
 
@@ -153,16 +155,30 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
 
     }
 
-    private final MeasureClickCallback measureClickCallback = new MeasureClickCallback() {
+//    private final MeasureClickCallback measureClickCallback = new MeasureClickCallback() {
+//
+//        @Override
+//        public void onClick(Measure measure) {
+//            currentMeasure = measure;
+//
+//
+//        }
+//    };
+
+
+    private final BeatClickCallback beatClickCallback = new BeatClickCallback() {
 
         @Override
-        public void onClick(Measure measure) {
+        public void onClick(Measure measure, View beatView, int beatPosition) {
+            currentMeasure = measure;
+            currentBeatPosition = beatPosition;
+            currentBeatView = beatView;
 
             if (getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED)) {
-                show(measure);
+                show(measure, currentBeatPosition);
             }
-
         }
+
     };
 
 
@@ -192,16 +208,16 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
 
                 if (chord !=null) {
 
-                    beatsForInsersion = new ArrayList<>(currentPosition.getBeats());
+                    beatsForInsersion = new ArrayList<>(currentMeasure.getBeats());
 //                    for (int i=0; i<beatsForInsersion.size(); i++) {
                     if (chord != null)
-                        beatsForInsersion.get(0).setChordName(chord);
+                        beatsForInsersion.get(currentBeatPosition).setChordName(chord);
                         //TODO prompt for next beat
 //                    }
-                    currentPosition.setBeats(beatsForInsersion);
+                    currentMeasure.setBeats(beatsForInsersion);
 
                     //update database
-                    updateMeasure(viewModel, currentPosition);
+                    updateMeasure(viewModel, currentMeasure);
                     usedStack1.setText(chord);
                  }
                 break;
@@ -229,12 +245,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
         }
     }
 
-    //interface implementation to get adapter's position
-//    @Override
-//    public void onItemClickListener(Measure position) {
-//        this.adapterPosition = position;
-//    }
-
+//selecting chord root on edit fragment
     public void onRootSelected(View view, String isPressedPref) {
         TextView preview = findViewById(R.id.preview_select_tv);
 
@@ -272,9 +283,9 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
 
     }
 
-
+//this is not working...
     @Override
     public void onClick(Measure measure) {
-        this.currentPosition = measure;
+        this.currentMeasure = measure;
     }
 }
