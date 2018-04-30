@@ -128,8 +128,8 @@ public class EditFragment extends Fragment {
 //        a_root.setOnClickListener(EditFragment.this::onButtonPressed);
 //        b_root.setOnClickListener(EditFragment.this::onButtonPressed);
 
-        measureNumEditorView.setText(String.valueOf(measure.getNumber()));
-        beatNumEditorView.setText(String.valueOf(beatPosition + 1));
+        measureNumEditorView.setText("M: " + String.valueOf(measure.getNumber()));
+        beatNumEditorView.setText("B: " + String.valueOf(beatPosition + 1));
 
 
 
@@ -147,6 +147,16 @@ public class EditFragment extends Fragment {
 
             }
         }
+
+    public void createRootToggleButtonGroup(View view) {
+
+        for (int i = 0; i < rootButtonsGroup.length; i++) {
+            rootButtonsGroup[i] = view.findViewById(btn_id[i]);
+            rootButtonsGroup[i].setOnClickListener(EditFragment.this::onButtonPressed);
+            rootButtonsGroup[i].setBackground(getResources().getDrawable(R.drawable.toggle_buttons));
+        }
+//        btn_unfocus = rootButtonsGroup[0];
+    }
 
     @Override
     public void onAttach(Context context) {
@@ -179,17 +189,6 @@ public class EditFragment extends Fragment {
 
         void onFragmentInteraction(View view);
 
-
-    }
-
-    public void createRootToggleButtonGroup(View view) {
-
-        for (int i = 0; i < rootButtonsGroup.length; i++) {
-            rootButtonsGroup[i] = view.findViewById(btn_id[i]);
-            rootButtonsGroup[i].setOnClickListener(EditFragment.this::onButtonPressed);
-            rootButtonsGroup[i].setBackground(getResources().getDrawable(R.drawable.toggle_buttons));
-        }
-        btn_unfocus = rootButtonsGroup[0];
     }
 
 }

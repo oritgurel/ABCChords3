@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.google.android.flexbox.AlignItems;
@@ -32,7 +33,7 @@ import com.oritmalki.mymusicapp2.viewmodel.MeasureListViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements OnFragmentInteractionListener, MeasureClickCallback {
+public class MainActivity extends AppCompatActivity implements OnFragmentInteractionListener {
 
     private RecyclerView recyclerView;
     private FlexboxLayoutManager layoutManager;
@@ -51,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     Measure currentMeasure;
     int currentBeatPosition;
     private View currentBeatView;
+    private FrameLayout editFragmentContainer;
 
     public final static String IS_C_ROOT_PRESSED = "IS_C_ROOT_PRESSED";
     public final static String IS_D_ROOT_PRESSED = "IS_D_ROOT_PRESSED";
@@ -102,8 +104,9 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
 //        if (!(getSupportFragmentManager().getBackStackEntryCount() == 1)) {
 
             transaction.addToBackStack(editFragment.getClass().getSimpleName());
-
+            editFragmentContainer.setVisibility(View.VISIBLE);
             transaction.replace(R.id.edit_fragment, editFragment, null).setTransition(android.R.transition.slide_top).commit();
+            recyclerView.smoothScrollToPosition(measure.getNumber());
         }
 //    }
 
@@ -128,6 +131,8 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
         addBut = findViewById(R.id.add_fab);
         addBut.setOnClickListener(listener);
 
+        editFragmentContainer = findViewById(R.id.edit_fragment);
+
         remBut = findViewById(R.id.remove_fab);
         remBut.setOnClickListener(listener);
 
@@ -144,28 +149,10 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
         recyclerView.addItemDecoration(itemDecoration);
         layoutManager.getBaseline();
         recyclerView.setLayoutManager(layoutManager);
-//        recyclerView.addOnScrollListener(new OnScrollListener() {
-//            @Override
-//            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-//                super.onScrollStateChanged(recyclerView, newState);
-//                recyclerView.getScrollState();
-//            }
-//        });
-
 
     }
 
-//    private final MeasureClickCallback measureClickCallback = new MeasureClickCallback() {
-//
-//        @Override
-//        public void onClick(Measure measure) {
-//            currentMeasure = measure;
-//
-//
-//        }
-//    };
-
-
+//interaction with adapter
     private final BeatClickCallback beatClickCallback = new BeatClickCallback() {
 
         @Override
@@ -181,7 +168,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
 
     };
 
-
+//DAO methods
     public void addEmptyMeasure(MeasureListViewModel viewModel) {
         viewModel.addEmptyMeasure(getApplication());
 
@@ -197,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
 
     }
 
-
+//when button pressed in editFragment
     @Override
     public void onFragmentInteraction(View view) {
 
@@ -219,6 +206,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
                     //update database
                     updateMeasure(viewModel, currentMeasure);
                     usedStack1.setText(chord);
+                    recyclerView.findViewHolderForAdapterPosition(currentBeatPosition + 1).itemView.performClick();
                  }
                 break;
             case R.id.c:
@@ -266,7 +254,15 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
         }
     }
 
-        public void initSharedPrefs() {
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        if (editFragmentContainer.getVisibility() == View.VISIBLE) {
+            editFragmentContainer.setVisibility(View.GONE);
+        }
+    }
+
+    public void initSharedPrefs() {
             final SharedPreferences preferences = getApplicationContext().getSharedPreferences("myApp", MODE_PRIVATE);
             this.preferences = preferences;
             Editor editor = preferences.edit();
@@ -283,9 +279,6 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
 
     }
 
-//this is not working...
-    @Override
-    public void onClick(Measure measure) {
-        this.currentMeasure = measure;
-    }
+
+
 }
