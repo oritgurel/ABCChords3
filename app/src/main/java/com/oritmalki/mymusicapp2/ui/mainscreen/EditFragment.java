@@ -26,6 +26,7 @@ import butterknife.ButterKnife;
  */
 public class EditFragment extends Fragment {
 
+
     @BindView(R.id.add_chord) Button addChordButt;
 
     @BindView(R.id.c) Button c_root;
@@ -73,8 +74,10 @@ public class EditFragment extends Fragment {
     private int[] btn_id = {R.id.c, R.id.d, R.id.e, R.id.f, R.id.g, R.id.a, R.id.b};
 
     private static final String ARG_MEASURE = "args_measure";
+    public static String ARG_BEAT_POSITION = "args_beat_position";
 
     Measure measure;
+    int beatPosition;
 
 
     private OnFragmentInteractionListener mListener;
@@ -84,10 +87,11 @@ public class EditFragment extends Fragment {
     }
 
 
-    public static EditFragment newInstance(Measure measure) {
+    public static EditFragment newInstance(Measure measure, int beatPosition) {
         EditFragment fragment = new EditFragment();
         Bundle args = new Bundle();
         args.putSerializable(ARG_MEASURE, measure);
+        args.putInt(ARG_BEAT_POSITION, beatPosition);
         fragment.setArguments(args);
         return fragment;
     }
@@ -97,6 +101,7 @@ public class EditFragment extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             this.measure = (Measure) getArguments().getSerializable(ARG_MEASURE);
+            this.beatPosition = getArguments().getInt(ARG_BEAT_POSITION);
         }
 
     }
@@ -123,8 +128,8 @@ public class EditFragment extends Fragment {
 //        a_root.setOnClickListener(EditFragment.this::onButtonPressed);
 //        b_root.setOnClickListener(EditFragment.this::onButtonPressed);
 
-        measureNumEditorView.setText(String.valueOf(measure.getNumber()));
-        beatNumEditorView.setText(String.valueOf(measure.getBeats().indexOf(measure.getBeats().get(0)) + 1));
+        measureNumEditorView.setText("M: " + String.valueOf(measure.getNumber()));
+        beatNumEditorView.setText("B: " + String.valueOf(beatPosition + 1));
 
 
 
@@ -142,6 +147,16 @@ public class EditFragment extends Fragment {
 
             }
         }
+
+    public void createRootToggleButtonGroup(View view) {
+
+        for (int i = 0; i < rootButtonsGroup.length; i++) {
+            rootButtonsGroup[i] = view.findViewById(btn_id[i]);
+            rootButtonsGroup[i].setOnClickListener(EditFragment.this::onButtonPressed);
+            rootButtonsGroup[i].setBackground(getResources().getDrawable(R.drawable.toggle_buttons));
+        }
+//        btn_unfocus = rootButtonsGroup[0];
+    }
 
     @Override
     public void onAttach(Context context) {
@@ -174,17 +189,6 @@ public class EditFragment extends Fragment {
 
         void onFragmentInteraction(View view);
 
-
-    }
-
-    public void createRootToggleButtonGroup(View view) {
-
-        for (int i = 0; i < rootButtonsGroup.length; i++) {
-            rootButtonsGroup[i] = view.findViewById(btn_id[i]);
-            rootButtonsGroup[i].setOnClickListener(EditFragment.this::onButtonPressed);
-            rootButtonsGroup[i].setBackground(getResources().getDrawable(R.drawable.toggle_buttons));
-        }
-        btn_unfocus = rootButtonsGroup[0];
     }
 
 }

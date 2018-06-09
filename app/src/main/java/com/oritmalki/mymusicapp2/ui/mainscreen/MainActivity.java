@@ -15,6 +15,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.google.android.flexbox.AlignItems;
@@ -32,7 +33,7 @@ import com.oritmalki.mymusicapp2.viewmodel.MeasureListViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements OnFragmentInteractionListener, MeasureClickCallback {
+public class MainActivity extends AppCompatActivity implements OnFragmentInteractionListener {
 
     private RecyclerView recyclerView;
     private FlexboxLayoutManager layoutManager;
@@ -48,7 +49,10 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     List<Beat> beatsForInsersion;
     SharedPreferences preferences;
     Editor editor;
-    Measure currentPosition;
+    Measure currentMeasure;
+    int currentBeatPosition;
+    private View currentBeatView;
+    private FrameLayout editFragmentContainer;
 
     public final static String IS_C_ROOT_PRESSED = "IS_C_ROOT_PRESSED";
     public final static String IS_D_ROOT_PRESSED = "IS_D_ROOT_PRESSED";
@@ -82,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
             @Override
             public void onChanged(@Nullable List<Measure> measures) {
                 if (measures != null) {
-                    measuresAdapter = new MeasuresAdapter(getApplicationContext(), measureClickCallback);
+                    measuresAdapter = new MeasuresAdapter(getApplicationContext(), beatClickCallback);
                     measuresAdapter.setMeasuresList(measures, getApplicationContext());
                     recyclerView.setAdapter(measuresAdapter);
                     recyclerView.smoothScrollToPosition(measures.size());
@@ -93,15 +97,16 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
         });
     }
 
-    public void show(Measure measure) {
+    public void show(Measure measure, int currentBeatPosition) {
 
-        EditFragment editFragment = EditFragment.newInstance(measure);
+        EditFragment editFragment = EditFragment.newInstance(measure, currentBeatPosition);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
 //        if (!(getSupportFragmentManager().getBackStackEntryCount() == 1)) {
 
             transaction.addToBackStack(editFragment.getClass().getSimpleName());
-
+            editFragmentContainer.setVisibility(View.VISIBLE);
             transaction.replace(R.id.edit_fragment, editFragment, null).setTransition(android.R.transition.slide_top).commit();
+            recyclerView.smoothScrollToPosition(measure.getNumber());
         }
 //    }
 
@@ -126,6 +131,8 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
         addBut = findViewById(R.id.add_fab);
         addBut.setOnClickListener(listener);
 
+        editFragmentContainer = findViewById(R.id.edit_fragment);
+
         remBut = findViewById(R.id.remove_fab);
         remBut.setOnClickListener(listener);
 
@@ -142,30 +149,26 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
         recyclerView.addItemDecoration(itemDecoration);
         layoutManager.getBaseline();
         recyclerView.setLayoutManager(layoutManager);
-//        recyclerView.addOnScrollListener(new OnScrollListener() {
-//            @Override
-//            public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-//                super.onScrollStateChanged(recyclerView, newState);
-//                recyclerView.getScrollState();
-//            }
-//        });
-
 
     }
 
-    private final MeasureClickCallback measureClickCallback = new MeasureClickCallback() {
+//interaction with adapter
+    private final BeatClickCallback beatClickCallback = new BeatClickCallback() {
 
         @Override
-        public void onClick(Measure measure) {
+        public void onClick(Measure measure, View beatView, int beatPosition) {
+            currentMeasure = measure;
+            currentBeatPosition = beatPosition;
+            currentBeatView = beatView;
 
             if (getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED)) {
-                show(measure);
+                show(measure, currentBeatPosition);
             }
-
         }
+
     };
 
-
+//DAO methods
     public void addEmptyMeasure(MeasureListViewModel viewModel) {
         viewModel.addEmptyMeasure(getApplication());
 
@@ -181,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
 
     }
 
-
+//when button pressed in editFragment
     @Override
     public void onFragmentInteraction(View view) {
 
@@ -192,17 +195,18 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
 
                 if (chord !=null) {
 
-                    beatsForInsersion = new ArrayList<>(currentPosition.getBeats());
+                    beatsForInsersion = new ArrayList<>(currentMeasure.getBeats());
 //                    for (int i=0; i<beatsForInsersion.size(); i++) {
                     if (chord != null)
-                        beatsForInsersion.get(0).setChordName(chord);
+                        beatsForInsersion.get(currentBeatPosition).setChordName(chord);
                         //TODO prompt for next beat
 //                    }
-                    currentPosition.setBeats(beatsForInsersion);
+                    currentMeasure.setBeats(beatsForInsersion);
 
                     //update database
-                    updateMeasure(viewModel, currentPosition);
+                    updateMeasure(viewModel, currentMeasure);
                     usedStack1.setText(chord);
+                    recyclerView.findViewHolderForAdapterPosition(currentBeatPosition + 1).itemView.performClick();
                  }
                 break;
             case R.id.c:
@@ -229,12 +233,7 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
         }
     }
 
-    //interface implementation to get adapter's position
-//    @Override
-//    public void onItemClickListener(Measure position) {
-//        this.adapterPosition = position;
-//    }
-
+//selecting chord root on edit fragment
     public void onRootSelected(View view, String isPressedPref) {
         TextView preview = findViewById(R.id.preview_select_tv);
 
@@ -255,7 +254,15 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
         }
     }
 
-        public void initSharedPrefs() {
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        if (editFragmentContainer.getVisibility() == View.VISIBLE) {
+            editFragmentContainer.setVisibility(View.GONE);
+        }
+    }
+
+    public void initSharedPrefs() {
             final SharedPreferences preferences = getApplicationContext().getSharedPreferences("myApp", MODE_PRIVATE);
             this.preferences = preferences;
             Editor editor = preferences.edit();
@@ -273,8 +280,5 @@ public class MainActivity extends AppCompatActivity implements OnFragmentInterac
     }
 
 
-    @Override
-    public void onClick(Measure measure) {
-        this.currentPosition = measure;
-    }
+
 }
